@@ -61,11 +61,12 @@ def cli():
 
 @cli.command()
 @click.argument('project_name')
-def push(project_name):
+@click.option('--path', '-p', default='.env', help='Path to .env file (default: .env)')
+def push(project_name, path):
     """Upload local .env file to AWS"""
     ssm = get_ssm_client()
-    
-    env_path = os.path.join(os.getcwd(), '.env')
+
+    env_path = os.path.abspath(path)
     
     env_vars = parse_env_file(env_path)
     if not env_vars:
@@ -85,14 +86,16 @@ def push(project_name):
             click.echo(f"  {click.style('✓', fg='green')} {key} uploaded")
         except Exception as e:
             click.echo(click.style(f"  ✗ {key} upload failed: {str(e)}", fg='red'))
-        click.echo(click.style(f"\n ✅ Project {project_name} environment variables saved to AWS successfully!", fg='green'))
+
+    click.echo(click.style(f"\n✅ Project {project_name} environment variables saved to AWS successfully!", fg='green'))
 
 @cli.command()
 @click.argument('project_name')
-def pull(project_name):
+@click.option('--path', '-p', default='.env', help='Path to .env file (default: .env)')
+def pull(project_name, path):
     """Get environment variables from AWS and save to local .env file"""
     ssm = get_ssm_client()
-    
+
     click.echo(f"Project {click.style(project_name, fg='cyan')} environment variables are being fetched from AWS...")
     
     parameters = get_all_parameters_by_path(
@@ -109,8 +112,8 @@ def pull(project_name):
     for param in parameters:
         key = param['Name'].split('/')[-1]
         env_vars[key] = param['Value']
-    
-    env_path = os.path.join(os.getcwd(), '.env')
+
+    env_path = os.path.abspath(path)
     write_env_file(env_path, env_vars, project_name)
     
     click.echo(click.style(f"\n✅ Project {project_name} environment variables ({len(env_vars)} variables) saved to .env file successfully!", fg='green'))

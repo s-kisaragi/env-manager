@@ -39,6 +39,10 @@ Upload your local `.env` file to AWS Parameter Store:
 
 ```bash
 env-manager push <project-name>
+
+# Specify a custom .env file path
+env-manager push <project-name> --path /path/to/project/.env
+env-manager push <project-name> -p ./other/.env
 ```
 
 ### Pull Environment Variables from AWS
@@ -47,6 +51,10 @@ Download environment variables from AWS Parameter Store to your local `.env` fil
 
 ```bash
 env-manager pull <project-name>
+
+# Specify a custom output path
+env-manager pull <project-name> --path /path/to/project/.env
+env-manager pull <project-name> -p ./other/.env
 ```
 
 ### List Registered Projects
