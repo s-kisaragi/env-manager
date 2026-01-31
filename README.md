@@ -1,32 +1,35 @@
- # AWS .env Manager
+# AWS .env Manager
 
 A command-line tool for managing environment variables across multiple projects using AWS Systems Manager Parameter Store.
 
 ## Features
 
-- 🔐 Secure storage of environment variables in AWS Parameter Store
+- 🔐 Secure storage of environment variables in AWS Parameter Store (SecureString)
 - 📦 Multi-project support
 - 🔄 Easy synchronization between local `.env` files and AWS
 - 📋 List all registered projects and their variables
-- 🗑️ Safe deletion of project variables
+- 🗑️ Safe deletion of project variables with confirmation prompt
 
 ## Prerequisites
 
-- Python 3.11 or higher
-- AWS CLI configured with appropriate credentials
-- Required Python packages:
-  - boto3 >= 1.38.3
-  - click >= 8.1.8
+- Python 3.10 or higher
+- AWS CLI configured with appropriate credentials (`aws configure`)
 
 ## Installation
 
-1. Clone this repository:
 ```bash
-git clone https://github.com/yourusername/env-manager.git
+git clone https://github.com/s-kisaragi/env-manager.git
 cd env-manager
 ```
 
-2. Install dependencies:
+### Using uv (recommended)
+
+```bash
+uv sync
+```
+
+### Using pip
+
 ```bash
 pip install -e .
 ```
@@ -41,7 +44,7 @@ Upload your local `.env` file to AWS Parameter Store:
 env-manager push <project-name>
 
 # Specify a custom .env file path
-env-manager push <project-name> --path /path/to/project/.env
+env-manager push <project-name> --path /path/to/.env
 env-manager push <project-name> -p ./other/.env
 ```
 
@@ -53,7 +56,7 @@ Download environment variables from AWS Parameter Store to your local `.env` fil
 env-manager pull <project-name>
 
 # Specify a custom output path
-env-manager pull <project-name> --path /path/to/project/.env
+env-manager pull <project-name> --path /path/to/.env
 env-manager pull <project-name> -p ./other/.env
 ```
 
@@ -73,15 +76,16 @@ Remove all environment variables for a specific project:
 env-manager delete <project-name>
 ```
 
-## Project Structure
+## Parameter Store Structure
 
-- `/env/<project-name>/<variable-name>` - Parameter Store path structure
-- All variables are stored as SecureString type for enhanced security
+All variables are stored under the following path structure:
 
-## Contributing
+```
+/env/<project-name>/<variable-name>
+```
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+All values are stored as `SecureString` type for enhanced security.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

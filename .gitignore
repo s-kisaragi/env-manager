@@ -172,3 +172,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Nuitka build artifacts
+*.build/
+*.dist/
+*.onefile-build/
+env-manager

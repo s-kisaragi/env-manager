@@ -55,25 +55,38 @@ def get_all_parameters_by_path(ssm, path, with_decryption=False):
     return parameters
 
 @click.group()
+@click.version_option(version="0.1.0", prog_name="env-manager")
 def cli():
-    """AWS .env Manager - Multi-project .env management tool"""
+    """AWS .env Manager - Multi-project .env management tool
+
+    \b
+    Usage examples:
+      push my-project                        Upload .env in current directory
+      push my-project --path /path/to/.env   Upload .env from specified path
+      pull my-project                        Download .env to current directory
+      pull my-project --path /path/to/.env   Download .env to specified path
+    """
     pass
 
 @cli.command()
 @click.argument('project_name')
 @click.option('--path', '-p', default='.env', help='Path to .env file (default: .env)')
 def push(project_name, path):
-    """Upload local .env file to AWS"""
+    """Upload local .env file to AWS
+
+    Example: push my-project --path /path/to/.env
+    """
     ssm = get_ssm_client()
 
     env_path = os.path.abspath(path)
     
     env_vars = parse_env_file(env_path)
     if not env_vars:
-        return
-    
+        sys.exit(1)
+
     click.echo(f"Project {click.style(project_name, fg='cyan')} environment variables are being uploaded to AWS...")
-    
+
+    failed = 0
     for key, value in env_vars.items():
         param_name = f"/env/{project_name}/{key}"
         try:
@@ -86,14 +99,22 @@ def push(project_name, path):
             click.echo(f"  {click.style('✓', fg='green')} {key} uploaded")
         except Exception as e:
             click.echo(click.style(f"  ✗ {key} upload failed: {str(e)}", fg='red'))
+            failed += 1
 
-    click.echo(click.style(f"\n✅ Project {project_name} environment variables saved to AWS successfully!", fg='green'))
+    if failed:
+        click.echo(click.style(f"\n⚠ Project {project_name}: {failed} variable(s) failed to upload", fg='yellow'))
+        sys.exit(1)
+    else:
+        click.echo(click.style(f"\n✅ Project {project_name} environment variables saved to AWS successfully!", fg='green'))
 
 @cli.command()
 @click.argument('project_name')
 @click.option('--path', '-p', default='.env', help='Path to .env file (default: .env)')
 def pull(project_name, path):
-    """Get environment variables from AWS and save to local .env file"""
+    """Get environment variables from AWS and save to local .env file
+
+    Example: pull my-project --path /path/to/.env
+    """
     ssm = get_ssm_client()
 
     click.echo(f"Project {click.style(project_name, fg='cyan')} environment variables are being fetched from AWS...")
@@ -106,8 +127,8 @@ def pull(project_name, path):
     
     if not parameters:
         click.echo(click.style(f"Error: Project {project_name} environment variables not found", fg='red'))
-        return
-    
+        sys.exit(1)
+
     env_vars = {}
     for param in parameters:
         key = param['Name'].split('/')[-1]
@@ -115,7 +136,7 @@ def pull(project_name, path):
 
     env_path = os.path.abspath(path)
     write_env_file(env_path, env_vars, project_name)
-    
+
     click.echo(click.style(f"\n✅ Project {project_name} environment variables ({len(env_vars)} variables) saved to .env file successfully!", fg='green'))
 
 @cli.command()
@@ -158,8 +179,9 @@ def delete(project_name):
     
     if not parameters:
         click.echo(click.style(f"Error: Project {project_name} environment variables not found", fg='red'))
-        return
-    
+        sys.exit(1)
+
+    failed = 0
     for param in parameters:
         try:
             ssm.delete_parameter(Name=param['Name'])
@@ -167,8 +189,13 @@ def delete(project_name):
             click.echo(f"  {click.style('✓', fg='yellow')} {key} deleted")
         except Exception as e:
             click.echo(click.style(f"  ✗ {param['Name']} deletion failed: {str(e)}", fg='red'))
-    
-    click.echo(click.style(f"\n✅ Project {project_name} environment variables ({len(parameters)} variables) deleted successfully!", fg='green'))
+            failed += 1
+
+    if failed:
+        click.echo(click.style(f"\n⚠ Project {project_name}: {failed} variable(s) failed to delete", fg='yellow'))
+        sys.exit(1)
+    else:
+        click.echo(click.style(f"\n✅ Project {project_name} environment variables ({len(parameters)} variables) deleted successfully!", fg='green'))
 
 if __name__ == '__main__':
     cli()
